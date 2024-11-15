@@ -7,10 +7,10 @@
         TableHead,
         TableHeadCell,
     } from "flowbite-svelte";
-    import { Button, Dropdown, DropdownItem, Radio } from "flowbite-svelte";
+    import { Button, Dropdown, Radio } from "flowbite-svelte";
     import { ChevronDownOutline } from "flowbite-svelte-icons";
     import { onMount } from "svelte";
-    import "ol/ol.css"; // Import OpenLayers CSS
+    import "ol/ol.css";
     import Map from "ol/Map";
     import View from "ol/View";
     import TileLayer from "ol/layer/Tile";
@@ -23,65 +23,102 @@
     import Icon from "ol/style/Icon";
     import { fromLonLat } from "ol/proj";
     import { TextPlaceholder } from "flowbite-svelte";
-    import { ListPlaceholder } from "flowbite-svelte";
-    import { Spinner } from "flowbite-svelte";
     import { Progressbar } from "flowbite-svelte";
     import { Modal } from "flowbite-svelte";
-    let group2 = 2;
+    import { Chart, Card } from "flowbite-svelte";
+
     let map;
     let defaultModal = false;
-
-    onMount(() => {
-        const coordinates = [
-            [26.0, 58.4],
-            [26.2, 58.5],
-            [25.8, 58.3],
-            [26.1, 58.2],
-            [25.9, 58.1],
-        ];
-
-        const markers = coordinates.map((coord) => {
-            const feature = new Feature({
-                geometry: new Point(fromLonLat(coord)),
-            });
-            feature.setStyle(
-                new Style({
-                    image: new Icon({
-                        color: "#00FF00",
-                        crossOrigin: "anonymous",
-                        src: "data:image/svg+xml;base64,<YOUR_SVG_BASE64>",
-                    }),
-                }),
-            );
-            return feature;
-        });
-
-        const markerLayer = new VectorLayer({
-            source: new VectorSource({
-                features: markers,
-            }),
-        });
-
-        map = new Map({
-            target: "map",
-            layers: [
-                new TileLayer({
-                    source: new OSM(),
-                }),
-                markerLayer,
-            ],
-            view: new View({
-                center: fromLonLat([26.0, 58.4]),
-                zoom: 8,
-            }),
-        });
-    });
-
     let landpads = [];
+    let landpadSuccessRates = [];
     let uniqueStatuses = [];
     let landpadDetails = { name: "", details: "" };
+    let statusFilter = null;
     let loading = true;
     let error = null;
+
+    let options = {
+        series: [],
+        colors: ["#1C64F2", "#16BDCA", "#FDBA8C", "#E74694"],
+        chart: {
+            height: 320,
+            width: "100%",
+            type: "donut",
+        },
+        stroke: {
+            colors: ["transparent"],
+            lineCap: "",
+        },
+        plotOptions: {
+            pie: {
+                donut: {
+                    labels: {
+                        show: true,
+                        name: {
+                            show: true,
+                            fontFamily: "Inter, sans-serif",
+                            offsetY: 20,
+                        },
+                        total: {
+                            showAlways: true,
+                            show: true,
+                            label: "Landing Pads",
+                            fontFamily: "Inter, sans-serif",
+                            formatter: function (w) {
+                                const sum = w.globals.seriesTotals.reduce(
+                                    (a, b) => {
+                                        return a + b;
+                                    },
+                                    0,
+                                );
+                                return `${sum}k`;
+                            },
+                        },
+                        value: {
+                            show: true,
+                            fontFamily: "Inter, sans-serif",
+                            offsetY: -20,
+                            formatter: function (value) {
+                                return value + "k";
+                            },
+                        },
+                    },
+                    size: "80%",
+                },
+            },
+        },
+        grid: {
+            padding: {
+                top: -2,
+            },
+        },
+        dataLabels: {
+            enabled: false,
+        },
+        legend: {
+            show: false
+        },
+        yaxis: {
+            labels: {
+                formatter: function (value) {
+                    return value + "k";
+                },
+            },
+        },
+        xaxis: {
+            labels: {
+                formatter: function (value) {
+                    return value + "k";
+                },
+            },
+            axisTicks: {
+                show: false,
+            },
+            axisBorder: {
+                show: false,
+            },
+        },
+    };
 
     onMount(async () => {
         try {
@@ -90,7 +127,92 @@
             );
             if (!response.ok) throw new Error("Failed to fetch data");
             landpads = await response.json();
+            landpadSuccessRates = landpads.map((item) => {
+                const success_rate =
+                    item.attempted_landings !== 0
+                        ? (item.successful_landings / item.attempted_landings) *
+                          100
+                        : 0;
+                return Math.round(success_rate);
+            });
+
+            options = {
+                ...options,
+                series: landpadSuccessRates,
+                
+            };
+
             uniqueStatuses = [...new Set(landpads.map((zone) => zone.status))];
+
+            const activeLandpads = landpads.filter(
+                (zone) => zone.status === "active",
+            );
+
+            const markers = activeLandpads.map((zone) => {
+                const feature = new Feature({
+                    geometry: new Point(
+                        fromLonLat([
+                            zone.location.longitude,
+                            zone.location.latitude,
+                        ]),
+                    ),
+                });
+                feature.setStyle(
+                    new Style({
+                        image: new Icon({
+                            color: "#00FF00",
+                            crossOrigin: "anonymous",
+                            src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDE0IDE1IiBmaWxsPSJub25lIj4KPGVsbGlwc2UgY3g9IjcuMTY0NDciIGN5PSI3LjYzOTU2IiByeD0iNi43ODM4NSIgcnk9IjcuMDg3MzEiIGZpbGw9IiM5MUY3NTIiLz4KPC9zdmc+",
+                            scale: 1.5,
+                        }),
+                    }),
+                );
+                return feature;
+            });
+
+            const tileLayer = new TileLayer({
+                source: new OSM(),
+            });
+
+            const markerLayer = new VectorLayer({
+                source: new VectorSource({
+                    features: markers,
+                }),
+            });
+
+            map = new Map({
+                target: "map",
+                layers: [tileLayer, markerLayer],
+                view: new View({
+                    center: fromLonLat([-100.0, 40.0]),
+                    zoom: 3,
+                }),
+            });
+
+            tileLayer.on("postrender", (event) => {
+                const context = event.context;
+                const canvas = context.canvas;
+
+                context.save();
+
+                const imageData = context.getImageData(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height,
+                );
+                const data = imageData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    const gray = 0.3 * r + 0.59 * g + 0.11 * b;
+                    data[i] = data[i + 1] = data[i + 2] = gray;
+                }
+                context.putImageData(imageData, 0, 0);
+
+                context.restore();
+            });
         } catch (err) {
             error = err.message;
         } finally {
@@ -124,6 +246,16 @@
         landpadDetails.name = landpad.full_name;
         landpadDetails.details = landpad.details;
         return landpadDetails;
+    }
+
+    function handleStatusChange(status) {
+        statusFilter = status;
+    }
+
+    function filterByStatus() {
+        return statusFilter
+            ? landpads.filter((landpad) => landpad.status === statusFilter)
+            : landpads;
     }
 </script>
 
@@ -198,12 +330,16 @@
                     /></Button
                 >
                 <Dropdown class="w-48 p-3 space-y-1">
-                    {#each uniqueStatuses as statuses}
+                    {#each uniqueStatuses as status}
                         <li
-                            class="rounded p-2 capitalize text-nowrap hover:bg-gray-100 dark:hover:bg-gray-600"
+                            class="rounded p-2 capitalize text-nowrap hover:bg-gray-100"
                         >
-                            <Radio name="group2" bind:group={group2} value={1}
-                                >{statuses}</Radio
+                            <Radio
+                                name="group2"
+                                bind:group={statusFilter}
+                                on:click={() => {
+                                    handleStatusChange(status);
+                                }}>{status}</Radio
                             >
                         </li>
                     {/each}
@@ -337,6 +473,16 @@
             <p class="text-[16px] font-semibold leading-6">Map View</p>
         </div>
         <div id="map"></div>
+        <div class="mt-[30px] w-full">
+            <Card>
+                <div class="flex justify-between items-start w-full">
+                    <div class="flex-col items-center">
+                        <div class="flex items-center mb-1"></div>
+                    </div>
+                </div>
+                <Chart {options} class="py-6" />
+            </Card>
+        </div>
     </div>
 </div>
 
@@ -344,5 +490,6 @@
     #map {
         width: 600px;
         height: 300px;
+        filter: grayscale(100%);
     }
 </style>
