@@ -8,7 +8,10 @@
         TableHeadCell,
     } from "flowbite-svelte";
     import { Button, Dropdown, Radio } from "flowbite-svelte";
-    import { ChevronDownOutline } from "flowbite-svelte-icons";
+    import {
+        ChevronDownOutline,
+        ChevronUpOutline,
+    } from "flowbite-svelte-icons";
     import { onMount } from "svelte";
     import "ol/ol.css";
     import { TextPlaceholder } from "flowbite-svelte";
@@ -21,8 +24,13 @@
         FilterIcon,
         ListIcon,
         GridIcon,
+        ResetIcon,
     } from "$lib/icons/index.js";
     import { initializeMap } from "$lib/components/Map.js";
+    import {
+        successRateProgress,
+        calculateSuccessRate,
+    } from "$lib/helpers/helpers.js";
 
     let map;
     let defaultModal = false;
@@ -32,9 +40,13 @@
     let landpadDetails = { name: "", details: "" };
     let landpadLabels = [];
     let statusFilter = null;
+    let dropdownOpen = false;
+    let selectedStatus = null;
     let view = "list";
     let loading = true;
     let error = null;
+    let customColor = "#FF5733";
+    let dropdownRef;
     let chartOptions = { ...options };
 
     onMount(async () => {
@@ -79,33 +91,29 @@
         }
     });
 
+    const handleOutsideClick = (event) => {
+        if (dropdownRef && !dropdownRef.contains(event.target)) {
+            dropdownOpen = false;
+        }
+    };
+
+    onMount(() => {
+        document.addEventListener("mousedown", handleOutsideClick);
+        return () => {
+            document.removeEventListener("mousedown", handleOutsideClick);
+        };
+    });
+
     function handleView(e) {
         view = e.currentTarget.name;
         return view;
-    }
-
-    function calculateSuccessRate(landpad) {
-        const { successful_landings, attempted_landings } = landpad;
-        if (!attempted_landings || attempted_landings === 0) {
-            return "N/A";
-        }
-        return (
-            Math.round((successful_landings / attempted_landings) * 100) + "%"
-        );
-    }
-
-    function successRateProgress(landpad) {
-        const { successful_landings, attempted_landings } = landpad;
-        if (!attempted_landings || attempted_landings === 0) {
-            return "N/A";
-        }
-        return Math.round((successful_landings / attempted_landings) * 100);
     }
 
     function handleModal() {
         defaultModal = true;
         return defaultModal;
     }
+
     function getDetails(landpad) {
         landpadDetails.name = landpad.full_name;
         landpadDetails.details = landpad.details;
@@ -114,13 +122,17 @@
 
     function handleStatusChange(status) {
         statusFilter = status;
+        selectedStatus = selectedStatus === status ? null : status;
+        return statusFilter;
     }
 
-    function filterByStatus() {
-        return statusFilter
-            ? landpads.filter((landpad) => landpad.status === statusFilter)
-            : landpads;
+    function toggleDropdown() {
+        dropdownOpen = !dropdownOpen;
     }
+    $: customColor = dropdownOpen ? "#3f83f8" : "#000";
+    $: filteredLandpads = statusFilter
+        ? landpads.filter((landpad) => landpad.status === statusFilter)
+        : landpads;
 </script>
 
 <div
@@ -138,7 +150,7 @@
                     on:click={(e) => handleView(e)}
                     aria-label="list"
                     name="list"
-                    class={`${view === "list" ? "bg-[#EBEDF0] text-[#1C64F2]" : "bg-white"} hover:bg-[#EBEDF0] hover:text-[#1C64F2] items-center border-t border-b border-l rounded-l-[6px] border-[#E5E7EB] p-3`}
+                    class={`${view === "list" ? "bg-[#EBEDF0] text-[#1C64F2]" : "bg-white"} hover:text-[#1C64F2] items-center border-t border-b border-l rounded-l-[6px] border-[#E5E7EB] p-3`}
                 >
                     <ListIcon />
                 </button>
@@ -146,30 +158,46 @@
                     on:click={(e) => handleView(e)}
                     aria-label="grid"
                     name="grid"
-                    class={`${view === "grid" ? "bg-[#EBEDF0] text-[#1C64F2]" : "bg-white"} hover:bg-[#EBEDF0] hover:text-[#1C64F2] items-center border-t border-b border-r rounded-r-[6px] border-[#E5E7EB] p-3`}
+                    class={`${view === "grid" ? "bg-[#EBEDF0] text-[#1C64F2]" : "bg-white"} hover:text-[#1C64F2] items-center border-t border-b border-r rounded-r-[6px] border-[#E5E7EB] p-3`}
                 >
                     <GridIcon />
                 </button>
             </div>
-            <div>
+            <div bind:this={dropdownRef} class="flex items-center gap-4">
+                {#if selectedStatus}
+                    <Button
+                        on:click={() => handleStatusChange(null)}
+                        class="cursor-pointer border bg-[#F8F8F8] hover:bg-gray-100"
+                        ><ResetIcon /></Button
+                    >
+                {/if}
                 <Button
-                    class="bg-[#F8F8F8] border border-gray-200 rounded-lg text-gray-800 focus:ring-4 focus:ring-gray-100"
+                    on:click={toggleDropdown}
+                    class={`${dropdownOpen ? "text-blue-500" : "text-gray-800"} bg-[#F8F8F8] hover:bg-gray-100 border border-gray-200 rounded-lg focus:ring-4 focus:ring-gray-100`}
                 >
-                    <FilterIcon />
-                    <span class="ml-2">Filter By Status</span>
-                    <ChevronDownOutline
-                        class="w-6 h-6 ms-2 text-gray-800"
-                    /></Button
-                >
-                <Dropdown class="w-48 p-3 space-y-1">
+                    <FilterIcon color={customColor} />
+                    {#if selectedStatus === null}
+                        <span class="ml-2">Filter By Status</span>
+                    {:else}
+                        <span class="ml-2 capitalize">{selectedStatus}</span>
+                    {/if}
+                    {#if dropdownOpen}
+                        <ChevronUpOutline
+                            class={`${dropdownOpen ? "text-blue-500" : "text-gray-800"} w-6 h-6 ms-2 `}
+                        />
+                    {:else}
+                        <ChevronDownOutline
+                            class={`${dropdownOpen ? "text-blue-500" : "text-gray-800"} w-6 h-6 ms-2 `}
+                        />
+                    {/if}
+                </Button>
+                <Dropdown class="p-3 space-y-1">
                     {#each uniqueStatuses as status}
-                        <li
-                            class="rounded p-2 capitalize text-nowrap hover:bg-gray-100"
-                        >
+                        <li class="rounded p-2 capitalize text-nowrap">
                             <Radio
-                                name="group2"
-                                bind:group={statusFilter}
-                                on:click={() => {
+                                name={status}
+                                bind:group={selectedStatus}
+                                on:change={() => {
                                     handleStatusChange(status);
                                 }}>{status}</Radio
                             >
@@ -206,7 +234,7 @@
                     <TableHeadCell>Status</TableHeadCell>
                 </TableHead>
                 <TableBody tableBodyClass="divide-y">
-                    {#each landpads as landpad}
+                    {#each filteredLandpads as landpad}
                         <TableBodyRow>
                             <TableBodyCell>
                                 {#if loading}
@@ -296,7 +324,7 @@
                     <div
                         class="grid gap-8 my-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                     >
-                        {#each landpads as landpad}
+                        {#each filteredLandpads as landpad}
                             <div class="w-full text-start">
                                 <div
                                     class="object-cover object-center px-4 w-full mx-auto h-72 rounded-lg border border-gray-200"

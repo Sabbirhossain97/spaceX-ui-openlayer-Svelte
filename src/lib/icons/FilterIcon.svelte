@@ -1,7 +1,8 @@
 <script>
-    export let className = "w-[16px] h-[16px] text-gray-800 dark:text-white";
+    export let className = "w-[16px] h-[16px]";
     export let width = 24;
     export let height = 24;
+    export let color = "currentColor";
 </script>
 
 <svg
@@ -10,7 +11,7 @@
     xmlns="http://www.w3.org/2000/svg"
     {width}
     {height}
-    fill="currentColor"
+    fill={color}
     viewBox="0 0 24 24"
 >
     <path
