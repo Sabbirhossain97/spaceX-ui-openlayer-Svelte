@@ -33,15 +33,18 @@
     let landpadSuccessRates = [];
     let uniqueStatuses = [];
     let landpadDetails = { name: "", details: "" };
+    let landpadLabels = [];
     let statusFilter = null;
+    let view = "list";
     let loading = true;
     let error = null;
 
     let options = {
         series: [],
-        colors: ["#1C64F2", "#16BDCA", "#FDBA8C", "#E74694"],
+        colors: [],
+        labels: [],
         chart: {
-            height: 320,
+            height: 222,
             width: "100%",
             type: "donut",
         },
@@ -65,13 +68,7 @@
                             label: "Landing Pads",
                             fontFamily: "Inter, sans-serif",
                             formatter: function (w) {
-                                const sum = w.globals.seriesTotals.reduce(
-                                    (a, b) => {
-                                        return a + b;
-                                    },
-                                    0,
-                                );
-                                return `${sum}k`;
+                                return w.globals.seriesTotals.length;
                             },
                         },
                         value: {
@@ -79,7 +76,7 @@
                             fontFamily: "Inter, sans-serif",
                             offsetY: -20,
                             formatter: function (value) {
-                                return value + "k";
+                                return value;
                             },
                         },
                     },
@@ -96,19 +93,19 @@
             enabled: false,
         },
         legend: {
-            show: false
+            show: false,
         },
         yaxis: {
             labels: {
                 formatter: function (value) {
-                    return value + "k";
+                    return `${value}%`;
                 },
             },
         },
         xaxis: {
             labels: {
                 formatter: function (value) {
-                    return value + "k";
+                    return `${value}%`;
                 },
             },
             axisTicks: {
@@ -128,18 +125,24 @@
             if (!response.ok) throw new Error("Failed to fetch data");
             landpads = await response.json();
             landpadSuccessRates = landpads.map((item) => {
-                const success_rate =
-                    item.attempted_landings !== 0
-                        ? (item.successful_landings / item.attempted_landings) *
-                          100
-                        : 0;
-                return Math.round(success_rate);
+                if (item.attempted_landings === 0) {
+                    return 0;
+                } else if (item.successful_landings === 0) {
+                    return 0;
+                } else {
+                    return Math.round(
+                        (item.successful_landings / item.attempted_landings) *
+                            100,
+                    );
+                }
             });
+
+            landpadLabels = landpads.map((item) => item.full_name);
 
             options = {
                 ...options,
                 series: landpadSuccessRates,
-                
+                labels: landpadLabels,
             };
 
             uniqueStatuses = [...new Set(landpads.map((zone) => zone.status))];
@@ -220,6 +223,10 @@
         }
     });
 
+    function handleView(e) {
+        view = e.currentTarget.name;
+    }
+
     function calculateSuccessRate(landpad) {
         const { successful_landings, attempted_landings } = landpad;
         if (!attempted_landings || attempted_landings === 0) {
@@ -264,20 +271,26 @@
 >
     <img src="/logo.png" alt="logo" />
 </div>
-<div class="px-[110px] flex flex-row justify-center items-start gap-10">
-    <div class=" mt-[104px] flex flex-col">
+<div
+    class="px-[50px] flex flex-row justify-center items-start gap-10 pb-[230px]"
+>
+    <div class="mt-[50px] flex flex-col w-3/4">
         <div class="flex justify-between">
             <div class="flex">
-                <p
-                    class="bg-[#EBEDF0] items-center border-t border-b border-l rounded-l-[6px] border-[#E5E7EB] p-3"
+                <button
+                    on:click={(e) => handleView(e)}
+                    aria-label="list"
+                    name="list"
+                    class={`${view === "list" ? "bg-[#EBEDF0] text-[#1C64F2]" : "bg-white"} hover:bg-[#EBEDF0] hover:text-[#1C64F2] items-center border-t border-b border-l rounded-l-[6px] border-[#E5E7EB] p-3`}
                 >
                     <svg
-                        class="w-5 h-5 text-[#1C64F2]"
+                        class="w-5 h-5"
                         aria-hidden="true"
                         xmlns="http://www.w3.org/2000/svg"
                         width="24"
                         height="24"
                         fill="none"
+                        name="list"
                         viewBox="0 0 24 24"
                     >
                         <path
@@ -287,16 +300,20 @@
                             d="M9 8h10M9 12h10M9 16h10M4.99 8H5m-.02 4h.01m0 4H5"
                         />
                     </svg>
-                </p>
-                <p
-                    class="bg-white items-center border-t border-b border-r rounded-r-[6px] border-[#E5E7EB] p-3"
+                </button>
+                <button
+                    on:click={(e) => handleView(e)}
+                    aria-label="grid"
+                    name="grid"
+                    class={`${view === "grid" ? "bg-[#EBEDF0] text-[#1C64F2]" : "bg-white"} hover:bg-[#EBEDF0] hover:text-[#1C64F2] items-center border-t border-b border-r rounded-r-[6px] border-[#E5E7EB] p-3`}
                 >
                     <svg
-                        class="w-4 h-4 text-gray-800 dark:text-white"
+                        class="w-4 h-4"
                         aria-hidden="true"
                         xmlns="http://www.w3.org/2000/svg"
                         width="24"
                         height="24"
+                        name="grid"
                         fill="currentColor"
                         viewBox="0 0 24 24"
                     >
@@ -306,7 +323,7 @@
                             clip-rule="evenodd"
                         />
                     </svg>
-                </p>
+                </button>
             </div>
             <div>
                 <Button
@@ -360,135 +377,266 @@
                 </p>
             </div>
         </Modal>
-        <Table class="border rounded-[10px] bg-[#fff] mt-[18px] max-w-[1158px]">
-            <TableHead
-                class="bg-gray-50 border-b text-[12px] font-semibold leading-[18px] uppercase text-gray-500 inter"
-            >
-                <TableHeadCell>Full name</TableHeadCell>
-                <TableHeadCell>Location Name</TableHeadCell>
-                <TableHeadCell>Region</TableHeadCell>
-                <TableHeadCell>Details</TableHeadCell>
-                <TableHeadCell>Success Rate</TableHeadCell>
-                <TableHeadCell>Wikipedia link</TableHeadCell>
-                <TableHeadCell>Status</TableHeadCell>
-            </TableHead>
-            <TableBody tableBodyClass="divide-y">
-                {#each landpads as landpad}
-                    <TableBodyRow>
-                        <TableBodyCell>
-                            {#if loading}
-                                <TextPlaceholder />
-                            {:else}
-                                {landpad.full_name}
-                            {/if}
-                        </TableBodyCell>
-                        <TableBodyCell>{landpad.location.name}</TableBodyCell>
-                        <TableBodyCell>{landpad.location.region}</TableBodyCell>
-                        <TableBodyCell>
-                            <Button
-                                on:click={() => {
-                                    handleModal();
-                                    getDetails(landpad);
-                                }}
-                                class="bg-gray-100 transition duration-300 hover:bg-gray-200 "
-                            >
-                                <span
-                                    class="hover:text-gray-900 text-gray-900 text-[12px] font-medium leading-[18px] -px-4 -py-4"
-                                    >View Details</span
-                                >
-                            </Button>
-                        </TableBodyCell>
-                        <TableBodyCell>
-                            <div>
-                                {#if successRateProgress(landpad) !== "N/A"}
-                                    <Progressbar
-                                        progress={successRateProgress(landpad)}
-                                        size="h-1.5"
-                                        progressClass="bg-green-400"
-                                    />
+        {#if view === "list"}
+            <Table class="border rounded-[10px] bg-[#fff] mt-[18px]">
+                <TableHead
+                    class="bg-gray-50 border-b text-[12px] font-semibold leading-[18px] uppercase text-gray-500 inter"
+                >
+                    <TableHeadCell>Full name</TableHeadCell>
+                    <TableHeadCell>Location Name</TableHeadCell>
+                    <TableHeadCell>Region</TableHeadCell>
+                    <TableHeadCell>Details</TableHeadCell>
+                    <TableHeadCell>Success Rate</TableHeadCell>
+                    <TableHeadCell>Wikipedia link</TableHeadCell>
+                    <TableHeadCell>Status</TableHeadCell>
+                </TableHead>
+                <TableBody tableBodyClass="divide-y">
+                    {#each landpads as landpad}
+                        <TableBodyRow>
+                            <TableBodyCell>
+                                {#if loading}
+                                    <TextPlaceholder />
+                                {:else}
+                                    {landpad.full_name}
                                 {/if}
-                            </div>
-                            <span>
-                                {calculateSuccessRate(landpad)}
-                            </span>
-                        </TableBodyCell>
-                        <TableBodyCell>
-                            {#if landpad.wikipedia}
-                                <a
-                                    href={landpad.wikipedia}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label="link"
+                            </TableBodyCell>
+                            <TableBodyCell
+                                >{landpad.location.name}</TableBodyCell
+                            >
+                            <TableBodyCell
+                                >{landpad.location.region}</TableBodyCell
+                            >
+                            <TableBodyCell>
+                                <Button
+                                    on:click={() => {
+                                        handleModal();
+                                        getDetails(landpad);
+                                    }}
+                                    class="bg-gray-100 transition duration-300 hover:bg-gray-200 "
                                 >
-                                    <svg
-                                        class="w-6 h-6 text-[#1C64F2]"
-                                        aria-hidden="true"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
+                                    <span
+                                        class="hover:text-gray-900 text-gray-900 text-[12px] font-medium leading-[18px] -px-4 -py-4"
+                                        >View Details</span
                                     >
-                                        <path
-                                            stroke="currentColor"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M13.213 9.787a3.391 3.391 0 0 0-4.795 0l-3.425 3.426a3.39 3.39 0 0 0 4.795 4.794l.321-.304m-.321-4.49a3.39 3.39 0 0 0 4.795 0l3.424-3.426a3.39 3.39 0 0 0-4.794-4.795l-1.028.961"
+                                </Button>
+                            </TableBodyCell>
+                            <TableBodyCell>
+                                <div>
+                                    {#if successRateProgress(landpad) !== "N/A"}
+                                        <Progressbar
+                                            progress={successRateProgress(
+                                                landpad,
+                                            )}
+                                            size="h-1.5"
+                                            progressClass="bg-green-400"
                                         />
-                                    </svg></a
-                                >
-                            {/if}
-                        </TableBodyCell>
-                        <TableBodyCell class="text-start">
-                            {#if landpad.status === "active"}
-                                <span
-                                    class="capitalize bg-green-100 text-green-800 px-[16px] py-[6px] rounded-md"
-                                >
-                                    {landpad.status}
+                                    {/if}
+                                </div>
+                                <span>
+                                    {calculateSuccessRate(landpad)}
                                 </span>
-                            {/if}
-                            {#if landpad.status === "retired"}
-                                <span
-                                    class="capitalize bg-red-100 text-red-800 px-[16px] py-[6px] rounded-md"
+                            </TableBodyCell>
+                            <TableBodyCell>
+                                {#if landpad.wikipedia}
+                                    <a
+                                        href={landpad.wikipedia}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label="link"
+                                    >
+                                        <svg
+                                            class="w-6 h-6 text-[#1C64F2]"
+                                            aria-hidden="true"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="24"
+                                            height="24"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                stroke="currentColor"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M13.213 9.787a3.391 3.391 0 0 0-4.795 0l-3.425 3.426a3.39 3.39 0 0 0 4.795 4.794l.321-.304m-.321-4.49a3.39 3.39 0 0 0 4.795 0l3.424-3.426a3.39 3.39 0 0 0-4.794-4.795l-1.028.961"
+                                            />
+                                        </svg>
+                                    </a>
+                                {/if}
+                            </TableBodyCell>
+                            <TableBodyCell class="text-start">
+                                {#if landpad.status === "active"}
+                                    <span
+                                        class="capitalize bg-green-100 text-green-800 px-[16px] py-[6px] rounded-md"
+                                    >
+                                        {landpad.status}
+                                    </span>
+                                {/if}
+                                {#if landpad.status === "retired"}
+                                    <span
+                                        class="capitalize bg-red-100 text-red-800 px-[16px] py-[6px] rounded-md"
+                                    >
+                                        {landpad.status}
+                                    </span>
+                                {/if}
+                                {#if landpad.status === "under construction"}
+                                    <span
+                                        class="capitalize bg-[#E1EFFE] text-[#1E429F] px-[16px] py-[6px] rounded-md"
+                                    >
+                                        {landpad.status}
+                                    </span>
+                                {/if}
+                            </TableBodyCell>
+                        </TableBodyRow>
+                    {/each}
+                </TableBody>
+            </Table>
+        {:else}
+            <section>
+                <div class="flex items-center justify-center">
+                    <div
+                        class="grid gap-8 my-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    >
+                        {#each landpads as landpad}
+                            <div class="w-full text-start">
+                                <div
+                                    class="object-cover object-center px-4 w-full mx-auto h-72 rounded-lg border border-gray-200"
                                 >
-                                    {landpad.status}
-                                </span>
-                            {/if}
-                            {#if landpad.status === "under construction"}
-                                <span
-                                    class="capitalize bg-[#E1EFFE] text-[#1E429F] px-[16px] py-[6px] rounded-md"
-                                >
-                                    {landpad.status}
-                                </span>
-                            {/if}
-                        </TableBodyCell>
-                    </TableBodyRow>
-                {/each}
-            </TableBody>
-        </Table>
+                                    <div class="pt-4 space-y-2 h-3/4">
+                                        <div class="flex justify-between">
+                                            <h5 class="text-xl font-bold ">
+                                                {landpad.full_name}
+                                            </h5>
+                                        </div>
+                                        <p class="mt-1 font-medium">
+                                            <span class="font-semibold"
+                                                >Location:</span
+                                            >
+                                            <span class="text-gray-500"
+                                                >{landpad.location.name}</span
+                                            >
+                                        </p>
+                                        <p class="mt-1 font-medium">
+                                            <span class="font-semibold"
+                                                >Region:</span
+                                            >
+                                            <span class="text-gray-500"
+                                                >{landpad.location.region}</span
+                                            >
+                                        </p>
+                                        <div class="flex items-center">
+                                            <p
+                                                class="font-semibold text-nowrap"
+                                            >
+                                                Success Rate:
+                                            </p>
+                                            <p class="ml-2 text-gray-500">
+                                                {calculateSuccessRate(landpad)}
+                                            </p>
+                                        </div>
+                                        <p class="mt-1 font-medium">
+                                            <span class="font-semibold"
+                                                >Status:</span
+                                            >
+                                            {#if landpad.status === "active"}
+                                                <span
+                                                    class="capitalize text-[12px] bg-green-100 text-green-800 px-[16px] py-[6px] rounded-md"
+                                                >
+                                                    {landpad.status}
+                                                </span>
+                                            {/if}
+                                            {#if landpad.status === "retired"}
+                                                <span
+                                                    class="capitalize text-[12px] bg-red-100 text-red-800 px-[16px] py-[6px] rounded-md"
+                                                >
+                                                    {landpad.status}
+                                                </span>
+                                            {/if}
+                                            {#if landpad.status === "under construction"}
+                                                <span
+                                                    class="capitalize text-[12px] bg-[#E1EFFE] text-[#1E429F] px-[16px] py-[6px] rounded-md"
+                                                >
+                                                    {landpad.status}
+                                                </span>
+                                            {/if}
+                                        </p>
+                                    </div>
+                                    <div class="flex h-1/4 justify-center items-start">
+                                        <div class="flex gap-4">
+                                            <Button
+                                                on:click={() => {
+                                                    handleModal();
+                                                    getDetails(landpad);
+                                                }}
+                                                class="bg-gray-100 text-nowrap transition duration-300 hover:bg-gray-200 "
+                                            >
+                                                <span
+                                                    class="hover:text-gray-900 text-gray-900 text-[12px] font-medium leading-[18px] -px-4 -py-4"
+                                                    >View Details</span
+                                                >
+                                            </Button>
+                                            <Button
+                                                class="bg-gray-100 text-nowrap transition duration-300 hover:bg-gray-200 focus:ring-1 focus:ring-gray-200"
+                                            >
+                                                <a
+                                                    href={landpad.wikipedia}
+                                                    target="_blank"
+                                                >
+                                                    <span
+                                                        class="hover:text-gray-900 flex items-center gap-2 text-gray-900 text-[12px] font-medium leading-[18px] -px-4 -py-4"
+                                                        >Wikipedia Link
+                                                        <svg
+                                                            class="w-4 h-4 text-[#1C64F2]"
+                                                            aria-hidden="true"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            width="24"
+                                                            height="24"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                stroke="currentColor"
+                                                                stroke-linecap="round"
+                                                                stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M13.213 9.787a3.391 3.391 0 0 0-4.795 0l-3.425 3.426a3.39 3.39 0 0 0 4.795 4.794l.321-.304m-.321-4.49a3.39 3.39 0 0 0 4.795 0l3.424-3.426a3.39 3.39 0 0 0-4.794-4.795l-1.028.961"
+                                                            />
+                                                        </svg>
+                                                    </span>
+                                                </a>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            </section>
+        {/if}
     </div>
-    <div class="flex flex-col mt-[104px] rounded-lg">
+    <div class="flex flex-col mt-[50px] rounded-lg w-1/4">
         <div class="border px-4 py-4">
             <p class="text-[16px] font-semibold leading-6">Map View</p>
         </div>
         <div id="map"></div>
-        <div class="mt-[30px] w-full">
-            <Card>
-                <div class="flex justify-between items-start w-full">
-                    <div class="flex-col items-center">
-                        <div class="flex items-center mb-1"></div>
-                    </div>
-                </div>
-                <Chart {options} class="py-6" />
-            </Card>
+        <div class="mt-[30px] border flex flex-col justify-center">
+            <div class="px-4 py-4">
+                <p class="text-[16px] font-semibold leading-6">
+                    Success Rate Chart
+                </p>
+            </div>
+            <div class="flex justify-center pb-10">
+                <Card class="border-none shadow-none">
+                    <Chart {options} />
+                </Card>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
     #map {
-        width: 600px;
         height: 300px;
         filter: grayscale(100%);
     }
