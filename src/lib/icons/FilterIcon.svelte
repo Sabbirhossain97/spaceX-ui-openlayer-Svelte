@@ -1,17 +1,14 @@
 <script>
-    export let className = "w-[16px] h-[16px]";
-    export let width = 24;
-    export let height = 24;
-    export let color = "currentColor";
+    const { dropdownOpen } = $props();
 </script>
 
 <svg
-    class={className}
+    class={`${dropdownOpen ? "text-blue-500" : "text-gray-800"} w-[16px] h-[16px]`}
     aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
-    {width}
-    {height}
-    fill={color}
+    height={24}
+    width={24}
+    fill="currentColor"
     viewBox="0 0 24 24"
 >
     <path

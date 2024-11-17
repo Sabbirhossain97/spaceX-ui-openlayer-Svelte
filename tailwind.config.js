@@ -20,17 +20,19 @@ export default {
         sans: ['Inter', 'sans-serif'],
       },
       border: {
-           borderRadius: {
+        borderRadius: {
           'list': '6px 0px 0px 6px;'
-           }
+        }
       },
       boxShadow: {
         'header': '0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px -1px rgba(0, 0, 0, 0.10)',
-        'custom-table': '0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px -1px rgba(0, 0, 0, 0.10)'
+        'custom-table': '0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px -1px rgba(0, 0, 0, 0.10)',
+        'map': '0px 4px 6px -1px rgba(0, 0, 0, 0.10), 0px 2px 4px -2px rgba(0, 0, 0, 0.05);',
+        'chart': ' 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px -1px rgba(0, 0, 0, 0.10)'
       },
       colors: {
         gray: {
-          50: 'var(--gray-50, #F9FAFB)', 
+          50: 'var(--gray-50, #F9FAFB)',
         },
       }
     }

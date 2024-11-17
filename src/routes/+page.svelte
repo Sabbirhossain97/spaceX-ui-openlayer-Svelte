@@ -14,8 +14,13 @@
     } from "flowbite-svelte-icons";
     import { onMount } from "svelte";
     import "ol/ol.css";
-    import { TextPlaceholder } from "flowbite-svelte";
+    import {
+        TextPlaceholder,
+        ListPlaceholder,
+        WidgetPlaceholder,
+    } from "flowbite-svelte";
     import { Progressbar } from "flowbite-svelte";
+    import { Spinner } from "flowbite-svelte";
     import { Modal } from "flowbite-svelte";
     import { Chart, Card } from "flowbite-svelte";
     import { options } from "$lib/components/Chartoptions.js";
@@ -26,28 +31,30 @@
         GridIcon,
         ResetIcon,
     } from "$lib/icons/index.js";
-    import { initializeMap } from "$lib/components/Map.js";
+    import { initializeMap } from "$lib/components/InitializeMap.js";
     import {
         successRateProgress,
         calculateSuccessRate,
     } from "$lib/helpers/helpers.js";
 
     let map;
-    let defaultModal = false;
-    let landpads = [];
-    let landpadSuccessRates = [];
-    let uniqueStatuses = [];
-    let landpadDetails = { name: "", details: "" };
+    let defaultModal = $state(false);
+    let landpads = $state([]);
+    let filteredLandpads = $state([]);
+    let landpadSuccessRates = $state([]);
+    let filteredSuccessRates = $state([]);
+    let uniqueStatuses = $state([]);
+    let landpadDetails = $state({ name: "", details: "" });
     let landpadLabels = [];
     let statusFilter = null;
-    let dropdownOpen = false;
-    let selectedStatus = null;
-    let view = "list";
-    let loading = true;
+    let dropdownOpen = $state(false);
+    let selectedStatus = $state(null);
+    let view = $state("list");
+    let loading = $state(true);
     let error = null;
-    let customColor = "#FF5733";
+    let customColor = $state("");
     let dropdownRef;
-    let chartOptions = { ...options };
+    let chartOptions = $state({ ...options });
 
     onMount(async () => {
         try {
@@ -56,6 +63,7 @@
             );
             if (!response.ok) throw new Error("Failed to fetch data");
             landpads = await response.json();
+            filteredLandpads = landpads;
             landpadSuccessRates = landpads.map((item) => {
                 if (item.attempted_landings === 0) {
                     return 0;
@@ -97,7 +105,7 @@
         }
     };
 
-    onMount(() => {
+    $effect(() => {
         document.addEventListener("mousedown", handleOutsideClick);
         return () => {
             document.removeEventListener("mousedown", handleOutsideClick);
@@ -106,7 +114,6 @@
 
     function handleView(e) {
         view = e.currentTarget.name;
-        return view;
     }
 
     function handleModal() {
@@ -114,7 +121,7 @@
         return defaultModal;
     }
 
-    function getDetails(landpad) {
+    function getLandpadDetails(landpad) {
         landpadDetails.name = landpad.full_name;
         landpadDetails.details = landpad.details;
         return landpadDetails;
@@ -123,16 +130,31 @@
     function handleStatusChange(status) {
         statusFilter = status;
         selectedStatus = selectedStatus === status ? null : status;
-        return statusFilter;
+        filteredLandpads = statusFilter
+            ? landpads.filter((landpad) => landpad.status === statusFilter)
+            : landpads;
+        filteredSuccessRates = filteredLandpads.map((item) => {
+            if (item.attempted_landings === 0) {
+                return 0;
+            } else if (item.successful_landings === 0) {
+                return 0;
+            } else {
+                return Math.round(
+                    (item.successful_landings / item.attempted_landings) * 100,
+                );
+            }
+        });
+        chartOptions = {
+            ...chartOptions,
+            series: filteredSuccessRates,
+            labels: landpadLabels,
+        };
     }
 
     function toggleDropdown() {
         dropdownOpen = !dropdownOpen;
+        customColor == dropdownOpen ? "#3f83f8" : "#000";
     }
-    $: customColor = dropdownOpen ? "#3f83f8" : "#000";
-    $: filteredLandpads = statusFilter
-        ? landpads.filter((landpad) => landpad.status === statusFilter)
-        : landpads;
 </script>
 
 <div
@@ -146,36 +168,36 @@
     <div class="mt-[50px] flex flex-col w-3/4">
         <div class="flex justify-between">
             <div class="flex">
-                <button
-                    on:click={(e) => handleView(e)}
+                <Button
+                    onclick={(e) => handleView(e)}
                     aria-label="list"
                     name="list"
-                    class={`${view === "list" ? "bg-[#EBEDF0] text-[#1C64F2]" : "bg-white"} hover:text-[#1C64F2] items-center border-t border-b border-l rounded-l-[6px] border-[#E5E7EB] p-3`}
+                    class={`${view === "list" ? "bg-[#EBEDF0] text-[#1C64F2]" : "bg-white"} hover:text-[#1C64F2] focus:ring-2 focus:ring-gray-100 rounded-l-md rounded-r-none items-center border border-[#E5E7EB] p-3`}
                 >
-                    <ListIcon />
-                </button>
-                <button
-                    on:click={(e) => handleView(e)}
+                    <ListIcon {view} />
+                </Button>
+                <Button
+                    onclick={(e) => handleView(e)}
                     aria-label="grid"
                     name="grid"
-                    class={`${view === "grid" ? "bg-[#EBEDF0] text-[#1C64F2]" : "bg-white"} hover:text-[#1C64F2] items-center border-t border-b border-r rounded-r-[6px] border-[#E5E7EB] p-3`}
+                    class={`${view === "grid" ? "bg-[#EBEDF0] text-[#1C64F2]" : "bg-white"} hover:text-[#1C64F2] focus:ring-2 focus:ring-gray-100 rounded-r-md rounded-l-none items-center border border-[#E5E7EB] p-3`}
                 >
-                    <GridIcon />
-                </button>
+                    <GridIcon {view} />
+                </Button>
             </div>
             <div bind:this={dropdownRef} class="flex items-center gap-4">
                 {#if selectedStatus}
                     <Button
-                        on:click={() => handleStatusChange(null)}
+                        onclick={() => handleStatusChange(null)}
                         class="cursor-pointer border bg-[#F8F8F8] hover:bg-gray-100"
                         ><ResetIcon /></Button
                     >
                 {/if}
                 <Button
-                    on:click={toggleDropdown}
+                    onclick={toggleDropdown}
                     class={`${dropdownOpen ? "text-blue-500" : "text-gray-800"} bg-[#F8F8F8] hover:bg-gray-100 border border-gray-200 rounded-lg focus:ring-4 focus:ring-gray-100`}
                 >
-                    <FilterIcon color={customColor} />
+                    <FilterIcon {dropdownOpen} />
                     {#if selectedStatus === null}
                         <span class="ml-2">Filter By Status</span>
                     {:else}
@@ -197,7 +219,7 @@
                             <Radio
                                 name={status}
                                 bind:group={selectedStatus}
-                                on:change={() => {
+                                onchange={() => {
                                     handleStatusChange(status);
                                 }}>{status}</Radio
                             >
@@ -220,104 +242,112 @@
                 </p>
             </div>
         </Modal>
-        {#if view === "list"}
-            <Table class="border rounded-[10px] bg-[#fff] mt-[18px]">
-                <TableHead
-                    class="bg-gray-50 border-b text-[12px] font-semibold leading-[18px] uppercase text-gray-500 inter"
-                >
-                    <TableHeadCell>Full name</TableHeadCell>
-                    <TableHeadCell>Location Name</TableHeadCell>
-                    <TableHeadCell>Region</TableHeadCell>
-                    <TableHeadCell>Details</TableHeadCell>
-                    <TableHeadCell>Success Rate</TableHeadCell>
-                    <TableHeadCell>Wikipedia link</TableHeadCell>
-                    <TableHeadCell>Status</TableHeadCell>
-                </TableHead>
-                <TableBody tableBodyClass="divide-y">
-                    {#each filteredLandpads as landpad}
-                        <TableBodyRow>
-                            <TableBodyCell>
-                                {#if loading}
-                                    <TextPlaceholder />
-                                {:else}
-                                    {landpad.full_name}
-                                {/if}
-                            </TableBodyCell>
-                            <TableBodyCell
-                                >{landpad.location.name}</TableBodyCell
-                            >
-                            <TableBodyCell
-                                >{landpad.location.region}</TableBodyCell
-                            >
-                            <TableBodyCell>
-                                <Button
-                                    on:click={() => {
-                                        handleModal();
-                                        getDetails(landpad);
-                                    }}
-                                    class="bg-gray-100 transition duration-300 hover:bg-gray-200 "
-                                >
-                                    <span
-                                        class="hover:text-gray-900 text-gray-900 text-[12px] font-medium leading-[18px] -px-4 -py-4"
-                                        >View Details</span
-                                    >
-                                </Button>
-                            </TableBodyCell>
-                            <TableBodyCell>
-                                <div>
-                                    {#if successRateProgress(landpad) !== "N/A"}
-                                        <Progressbar
-                                            progress={successRateProgress(
-                                                landpad,
-                                            )}
-                                            size="h-1.5"
-                                            progressClass="bg-green-400"
-                                        />
+        {#if loading}
+            <div
+                class="w-full flex justify-center items-center h-[500px] mt-[18px]"
+            >
+                <Spinner color="#3f83f8" size={12} />
+            </div>
+        {:else if view === "list"}
+            <div class="shadow-custom-table rounded-[10px] mt-[18px] bg-[#fff]">
+                <Table>
+                    <TableHead
+                        class="bg-gray-50 border-b text-[12px] font-semibold leading-[18px] uppercase text-gray-500 inter"
+                    >
+                        <TableHeadCell>Full name</TableHeadCell>
+                        <TableHeadCell>Location Name</TableHeadCell>
+                        <TableHeadCell>Region</TableHeadCell>
+                        <TableHeadCell>Details</TableHeadCell>
+                        <TableHeadCell>Success Rate</TableHeadCell>
+                        <TableHeadCell>Wikipedia link</TableHeadCell>
+                        <TableHeadCell>Status</TableHeadCell>
+                    </TableHead>
+                    <TableBody tableBodyClass="divide-y">
+                        {#each filteredLandpads as landpad}
+                            <TableBodyRow>
+                                <TableBodyCell>
+                                    {#if loading}
+                                        <TextPlaceholder />
+                                    {:else}
+                                        {landpad.full_name}
                                     {/if}
-                                </div>
-                                <span>
-                                    {calculateSuccessRate(landpad)}
-                                </span>
-                            </TableBodyCell>
-                            <TableBodyCell>
-                                {#if landpad.wikipedia}
-                                    <a
-                                        href={landpad.wikipedia}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        aria-label="link"
+                                </TableBodyCell>
+                                <TableBodyCell
+                                    >{landpad.location.name}</TableBodyCell
+                                >
+                                <TableBodyCell
+                                    >{landpad.location.region}</TableBodyCell
+                                >
+                                <TableBodyCell>
+                                    <Button
+                                        onclick={() => {
+                                            handleModal();
+                                            getLandpadDetails(landpad);
+                                        }}
+                                        class="bg-gray-100 transition duration-300 hover:bg-gray-200 "
                                     >
-                                        <LinkIcon />
-                                    </a>
-                                {/if}
-                            </TableBodyCell>
-                            <TableBodyCell class="text-start">
-                                {#if landpad.status === "active"}
-                                    <span
-                                        class="capitalize bg-green-100 text-green-800 px-[16px] py-[6px] rounded-md"
-                                    >
-                                        {landpad.status}
+                                        <span
+                                            class="hover:text-gray-900 text-gray-900 text-[12px] font-medium leading-[18px] -px-4 -py-4"
+                                            >View Details</span
+                                        >
+                                    </Button>
+                                </TableBodyCell>
+                                <TableBodyCell>
+                                    <div>
+                                        {#if successRateProgress(landpad) !== "N/A"}
+                                            <Progressbar
+                                                progress={successRateProgress(
+                                                    landpad,
+                                                )}
+                                                size="h-1.5"
+                                                progressClass="bg-green-400"
+                                            />
+                                        {/if}
+                                    </div>
+                                    <span>
+                                        {calculateSuccessRate(landpad)}
                                     </span>
-                                {/if}
-                                {#if landpad.status === "retired"}
-                                    <span
-                                        class="capitalize bg-red-100 text-red-800 px-[16px] py-[6px] rounded-md"
-                                    >
-                                        {landpad.status}
-                                    </span>
-                                {/if}
-                                {#if landpad.status === "under construction"}
-                                    <span
-                                        class="capitalize bg-[#E1EFFE] text-[#1E429F] px-[16px] py-[6px] rounded-md"
-                                    >
-                                        {landpad.status}
-                                    </span>
-                                {/if}
-                            </TableBodyCell>
-                        </TableBodyRow>
-                    {/each}
-                </TableBody>
-            </Table>
+                                </TableBodyCell>
+                                <TableBodyCell>
+                                    {#if landpad.wikipedia}
+                                        <a
+                                            href={landpad.wikipedia}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label="link"
+                                        >
+                                            <LinkIcon />
+                                        </a>
+                                    {/if}
+                                </TableBodyCell>
+                                <TableBodyCell class="text-start">
+                                    {#if landpad.status === "active"}
+                                        <span
+                                            class="capitalize bg-green-100 text-green-800 px-[16px] py-[6px] rounded-md"
+                                        >
+                                            {landpad.status}
+                                        </span>
+                                    {/if}
+                                    {#if landpad.status === "retired"}
+                                        <span
+                                            class="capitalize bg-red-100 text-red-800 px-[16px] py-[6px] rounded-md"
+                                        >
+                                            {landpad.status}
+                                        </span>
+                                    {/if}
+                                    {#if landpad.status === "under construction"}
+                                        <span
+                                            class="capitalize bg-[#E1EFFE] text-[#1E429F] px-[16px] py-[6px] rounded-md"
+                                        >
+                                            {landpad.status}
+                                        </span>
+                                    {/if}
+                                </TableBodyCell>
+                            </TableBodyRow>
+                        {/each}
+                    </TableBody>
+                </Table>
+            </div>
         {:else}
             <section>
                 <div class="flex items-center justify-center">
@@ -393,9 +423,9 @@
                                     >
                                         <div class="flex gap-4">
                                             <Button
-                                                on:click={() => {
+                                                onclick={() => {
                                                     handleModal();
-                                                    getDetails(landpad);
+                                                    getLandpadDetails(landpad);
                                                 }}
                                                 class="bg-gray-100 text-nowrap transition duration-300 hover:bg-gray-200 "
                                             >
@@ -428,21 +458,41 @@
             </section>
         {/if}
     </div>
-    <div class="flex flex-col mt-[50px] rounded-lg w-1/4">
-        <div class="border px-4 py-4">
-            <p class="text-[16px] font-semibold leading-6">Map View</p>
+    <div class="flex flex-col mt-[50px] rounded-lg w-1/4 relative">
+        <div
+            class="min-h-[300px] border border-[#E5E7EB] rounded-lg shadow-map relative"
+        >
+            <div class=" px-4 py-4">
+                <p class="text-[16px] font-semibold leading-6">Map View</p>
+            </div>
+            {#if loading}
+                <div
+                    class="absolute left-[43%] top-1/2 flex justify-center items-center bg-white z-10"
+                >
+                    <Spinner color="#3f83f8" size={8} />
+                </div>
+            {/if}
+            <div id="map" class={`${loading ? "opacity-0" : ""} `}></div>
         </div>
-        <div id="map"></div>
-        <div class="mt-[30px] border flex flex-col justify-center">
+
+        <div
+            class="mt-[30px] border border-[#E5E7EB] flex flex-col justify-center rounded-lg shadow-chart"
+        >
             <div class="px-4 py-4">
                 <p class="text-[16px] font-semibold leading-6">
                     Success Rate Chart
                 </p>
             </div>
             <div class="flex justify-center pb-10">
-                <Card class="border-none shadow-none">
-                    <Chart options={chartOptions} />
-                </Card>
+                {#if loading}
+                    <div class="py-20">
+                        <Spinner color="#3f83f8" size={8} />
+                    </div>
+                {:else}
+                    <Card class="border-none shadow-none">
+                        <Chart options={chartOptions} />
+                    </Card>
+                {/if}
             </div>
         </div>
     </div>
@@ -451,6 +501,7 @@
 <style>
     #map {
         height: 300px;
+        position: relative;
         filter: grayscale(100%);
     }
 </style>

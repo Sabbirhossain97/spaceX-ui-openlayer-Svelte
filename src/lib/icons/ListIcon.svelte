@@ -1,16 +1,14 @@
 <script>
-    export let className = "w-5 h-5";
-    export let width = 24;
-    export let height = 24;
+    const { view } = $props();
 </script>
 
 <svg
-    class={className}
+    class={`${ view === "list" ? "text-blue-500" : 'text-gray-800'} w-5 h-5 `}
     aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
-    {width}
-    {height}
-    fill="none"
+    width="24"
+    height="24"
+    fill="currentColor"
     name="list"
     viewBox="0 0 24 24"
 >
