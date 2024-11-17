@@ -157,10 +157,10 @@
     <img src="/logo.png" alt="logo" />
 </div>
 <div
-    class="px-[50px] flex flex-row justify-center items-start gap-10 pb-[230px]"
+    class="px-[50px] flex flex-col xl:flex-row justify-center items-start xl:gap-10 pb-[230px]"
 >
-    <div class="mt-[50px] flex flex-col w-3/4">
-        <div class="flex justify-between">
+    <div class="mt-[50px] flex flex-col w-full xl:w-3/4">
+        <div class="flex flex-col gap-4 sm:gap-0 sm:flex-row justify-between">
             <div class="flex">
                 <Button
                     onclick={(e) => handleView(e)}
@@ -189,13 +189,15 @@
                 {/if}
                 <Button
                     onclick={toggleDropdown}
-                    class={`${dropdownOpen ? "text-blue-500" : "text-gray-800"} bg-[#F8F8F8] hover:bg-gray-100 border border-gray-200 rounded-lg focus:ring-4 focus:ring-gray-100`}
+                    class={`${dropdownOpen ? "text-blue-500" : "text-gray-800"} w-full bg-[#F8F8F8] hover:bg-gray-100 border border-gray-200 rounded-lg focus:ring-4 focus:ring-gray-100`}
                 >
                     <FilterIcon {dropdownOpen} />
                     {#if selectedStatus === null}
                         <span class="ml-2">Filter By Status</span>
                     {:else}
-                        <span class="ml-2 capitalize">{selectedStatus}</span>
+                        <span class="ml-2 capitalize text-nowrap"
+                            >{selectedStatus}</span
+                        >
                     {/if}
                     {#if dropdownOpen}
                         <ChevronUpOutline
@@ -345,16 +347,16 @@
             </div>
         {:else}
             <section>
-                <div class="flex items-center justify-center">
+                <div class="flex items-center">
                     <div
-                        class="grid gap-8 my-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                        class="grid w-full gap-8 my-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4"
                     >
                         {#each filteredLandpads as landpad}
                             <div class="w-full text-start">
                                 <div
-                                    class="object-cover object-center px-4 w-full mx-auto h-72 rounded-lg border border-gray-200"
+                                    class="px-4 flex flex-col w-full mx-auto h-72 rounded-lg border border-gray-200"
                                 >
-                                    <div class="pt-4 space-y-2 h-3/4">
+                                    <div class="pt-4 space-y-2">
                                         <div class="flex justify-between">
                                             <h5 class="text-xl font-bold">
                                                 {landpad.full_name}
@@ -412,38 +414,34 @@
                                                 </span>
                                             {/if}
                                         </p>
-                                    </div>
-                                    <div
-                                        class="flex h-1/4 justify-center items-start"
-                                    >
-                                        <div class="flex gap-4">
-                                            <Button
-                                                onclick={() => {
-                                                    handleModal();
-                                                    getLandpadDetails(landpad);
-                                                }}
-                                                class="bg-gray-100 text-nowrap transition duration-300 hover:bg-gray-200 "
-                                            >
-                                                <span
-                                                    class="hover:text-gray-900 text-gray-900 text-[12px] font-medium leading-[18px] -px-4 -py-4"
-                                                    >View Details</span
-                                                >
-                                            </Button>
-                                            <Button
-                                                class="bg-gray-100 text-nowrap transition duration-300 hover:bg-gray-200 focus:ring-1 focus:ring-gray-200"
-                                            >
+                                        <p>
+                                            <span
+                                                class="font-semibold flex gap-2"
+                                                ><span>Wikipedia Link</span>
                                                 <a
                                                     href={landpad.wikipedia}
                                                     target="_blank"
-                                                >
-                                                    <span
-                                                        class="hover:text-gray-900 flex items-center gap-2 text-gray-900 text-[12px] font-medium leading-[18px] -px-4 -py-4"
-                                                        >Wikipedia Link
-                                                        <LinkIcon />
-                                                    </span>
-                                                </a>
-                                            </Button>
-                                        </div>
+                                                    ><LinkIcon /></a
+                                                ></span
+                                            >
+                                        </p>
+                                    </div>
+                                    <div
+                                        class="flex justify-center items-center h-full"
+                                    >
+                                        <Button
+                                            onclick={() => {
+                                                handleModal();
+                                                getLandpadDetails(landpad);
+                                            }}
+                                            size="sm"
+                                            class="bg-gray-100 text-nowrap transition duration-300 hover:bg-gray-200 w-full"
+                                        >
+                                            <span
+                                                class="hover:text-gray-900 text-gray-900 text-[16px] font-medium leading-[18px] px-4 -py-4"
+                                                >View Details</span
+                                            >
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
@@ -453,9 +451,11 @@
             </section>
         {/if}
     </div>
-    <div class="flex flex-col mt-[50px] rounded-lg w-1/4 relative">
+    <div
+        class="flex flex-col lg:flex-row gap-[30px] xl:flex-col mt-[50px] rounded-lg w-full xl:w-1/4 relative"
+    >
         <div
-            class="min-h-[300px] border border-[#E5E7EB] rounded-[12px] shadow-map relative"
+            class="min-h-[300px] border w-full lg:w-1/2 xl:w-full border-[#E5E7EB] rounded-[12px] shadow-map relative"
         >
             <div class=" px-4 py-4">
                 <p class="text-[16px] font-semibold leading-6">Map View</p>
@@ -474,7 +474,7 @@
         </div>
 
         <div
-            class="mt-[30px] border border-[#E5E7EB] flex flex-col justify-center rounded-lg shadow-chart"
+            class="border w-full lg:w-1/2 xl:w-full border-[#E5E7EB] flex flex-col justify-center rounded-lg shadow-chart"
         >
             <div class="px-4 py-4">
                 <p class="text-[16px] font-semibold leading-6">
