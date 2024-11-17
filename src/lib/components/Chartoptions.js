@@ -26,7 +26,12 @@ export let options = {
                         label: "Landing Pads",
                         fontFamily: "Inter, sans-serif",
                         formatter: function (w) {
-                            return w.globals.seriesTotals.length;
+                            const landpadTotal = w.globals.seriesTotals;
+                            const hasData = landpadTotal.some(value => value > 0);
+                            if (!hasData) {
+                                return "No Data of";
+                            }
+                            return `${landpadTotal.length}`;
                         },
                     },
                     value: {

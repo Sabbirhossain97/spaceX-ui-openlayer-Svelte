@@ -14,11 +14,7 @@
     } from "flowbite-svelte-icons";
     import { onMount } from "svelte";
     import "ol/ol.css";
-    import {
-        TextPlaceholder,
-        ListPlaceholder,
-        WidgetPlaceholder,
-    } from "flowbite-svelte";
+    import { TextPlaceholder } from "flowbite-svelte";
     import { Progressbar } from "flowbite-svelte";
     import { Spinner } from "flowbite-svelte";
     import { Modal } from "flowbite-svelte";
@@ -37,13 +33,11 @@
         calculateSuccessRate,
     } from "$lib/helpers/helpers.js";
 
-    let map;
     let defaultModal = $state(false);
     let landpads = $state([]);
     let filteredLandpads = $state([]);
     let landpadSuccessRates = $state([]);
     let filteredSuccessRates = $state([]);
-    let uniqueStatuses = $state([]);
     let landpadDetails = $state({ name: "", details: "" });
     let landpadLabels = [];
     let statusFilter = null;
@@ -54,6 +48,7 @@
     let error = null;
     let customColor = $state("");
     let dropdownRef;
+    let mapInstance;
     let chartOptions = $state({ ...options });
 
     onMount(async () => {
@@ -85,13 +80,11 @@
                 labels: landpadLabels,
             };
 
-            uniqueStatuses = [...new Set(landpads.map((zone) => zone.status))];
-
-            const activeLandpads = landpads.filter(
-                (zone) => zone.status === "active",
+            const { map, updateMarkers } = initializeMap(
+                "map",
+                filteredLandpads,
             );
-
-            map = initializeMap("map", activeLandpads);
+            mapInstance = { map, updateMarkers };
         } catch (err) {
             error = err.message;
         } finally {
@@ -133,6 +126,7 @@
         filteredLandpads = statusFilter
             ? landpads.filter((landpad) => landpad.status === statusFilter)
             : landpads;
+        mapInstance.updateMarkers(filteredLandpads);
         filteredSuccessRates = filteredLandpads.map((item) => {
             if (item.attempted_landings === 0) {
                 return 0;
@@ -214,9 +208,10 @@
                     {/if}
                 </Button>
                 <Dropdown class="p-3 space-y-1">
-                    {#each uniqueStatuses as status}
+                    {#each [...new Set(landpads.map((zone) => zone.status))] as status}
                         <li class="rounded p-2 capitalize text-nowrap">
                             <Radio
+                                class="focus:outline-none"
                                 name={status}
                                 bind:group={selectedStatus}
                                 onchange={() => {
@@ -460,7 +455,7 @@
     </div>
     <div class="flex flex-col mt-[50px] rounded-lg w-1/4 relative">
         <div
-            class="min-h-[300px] border border-[#E5E7EB] rounded-lg shadow-map relative"
+            class="min-h-[300px] border border-[#E5E7EB] rounded-[12px] shadow-map relative"
         >
             <div class=" px-4 py-4">
                 <p class="text-[16px] font-semibold leading-6">Map View</p>
@@ -472,7 +467,10 @@
                     <Spinner color="#3f83f8" size={8} />
                 </div>
             {/if}
-            <div id="map" class={`${loading ? "opacity-0" : ""} `}></div>
+            <div
+                id="map"
+                class={`${loading ? "opacity-0" : ""} bg-[#d3d3d3] h-[300px] relative`}
+            ></div>
         </div>
 
         <div
@@ -500,8 +498,6 @@
 
 <style>
     #map {
-        height: 300px;
-        position: relative;
-        filter: grayscale(100%);
+        border-radius: 12px;
     }
 </style>

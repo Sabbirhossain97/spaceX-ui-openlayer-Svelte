@@ -8,6 +8,7 @@ import { Point } from "ol/geom";
 import { Feature } from "ol";
 import { Style, Icon } from "ol/style";
 import { fromLonLat } from "ol/proj";
+import { defaults as defaultControls } from "ol/control";
 
 /**
  * Initialize the map and return the map instance.
@@ -15,44 +16,75 @@ import { fromLonLat } from "ol/proj";
  * @param {Array} activeLandpads - Array of landpad data with location info.
  * @returns {Map} OpenLayers Map instance.
  */
-export function initializeMap(target, activeLandpads) {
-    const markers = activeLandpads.map((zone) => {
-        const feature = new Feature({
-            geometry: new Point(
-                fromLonLat([zone.location.longitude, zone.location.latitude])
-            ),
-        });
-        feature.setStyle(
-            new Style({
-                image: new Icon({
-                    color: "#00FF00",
-                    crossOrigin: "anonymous",
-                    src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDE0IDE1IiBmaWxsPSJub25lIj4KPGVsbGlwc2UgY3g9IjcuMTY0NDciIGN5PSI3LjYzOTU2IiByeD0iNi43ODM4NSIgcnk9IjcuMDg3MzEiIGZpbGw9IiM5MUY3NTIiLz4KPC9zdmc+",
-                    scale: 1.5,
-                }),
-            })
-        );
-        return feature;
+export function initializeMap(target, initialLandpads) {
+    const markersSource = new VectorSource();
+
+    const markersLayer = new VectorLayer({
+        source: markersSource,
     });
 
     const tileLayer = new TileLayer({
         source: new OSM(),
     });
 
-    const markerLayer = new VectorLayer({
-        source: new VectorSource({
-            features: markers,
-        }),
-    });
-
     const map = new Map({
         target,
-        layers: [tileLayer, markerLayer],
+        layers: [tileLayer, markersLayer],
+        controls: defaultControls({
+            zoom: false,
+            attribution: false,
+        }),
         view: new View({
             center: fromLonLat([-100.0, 40.0]),
             zoom: 3,
         }),
     });
 
-    return map;
+    const updateMarkers = (landpads) => {
+        markersSource.clear();
+
+        const features = landpads.map((zone) => {
+            const fillColor =
+                zone.status === "active"
+                    ? "#00FF00"
+                    : zone.status === "retired"
+                        ? "#FF0000"
+                        : "#0000FF";
+
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="14" viewBox="0 0 15 14" fill="none">
+                  <ellipse cx="7.45512" cy="7.0047" rx="6.78385" ry="6.96759" fill="${fillColor}"/>
+                </svg>
+            `;
+
+            const svgBase64 = `data:image/svg+xml;base64,${btoa(svg)}`;
+
+            const feature = new Feature({
+                geometry: new Point(
+                    fromLonLat([zone.location.longitude, zone.location.latitude])
+                ),
+                name: zone.name,
+            });
+
+            feature.setStyle(
+                new Style({
+                    image: new Icon({
+                        src: svgBase64,
+                        scale: 1,
+                    }),
+                })
+            );
+
+            return feature;
+        });
+
+        markersSource.addFeatures(features);
+    };
+
+    updateMarkers(initialLandpads);
+
+    return {
+        map,
+        updateMarkers,
+    };
 }
