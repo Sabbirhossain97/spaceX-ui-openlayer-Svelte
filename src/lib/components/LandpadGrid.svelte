@@ -41,9 +41,13 @@
                                 <p class="font-semibold text-nowrap">
                                     Success Rate:
                                 </p>
-                                <p class="ml-2 text-gray-500">
-                                    {calculateSuccessRate(landpad)}
-                                </p>
+                                {#if landpad.attempted_landings === 0}
+                                    <p class="ml-2 text-gray-500">N/A</p>
+                                {:else}
+                                    <p class="ml-2 text-gray-500">
+                                        {calculateSuccessRate(landpad) + "%"}
+                                    </p>
+                                {/if}
                             </div>
                             <p class="mt-1 font-medium">
                                 <span class="font-semibold">Status:</span>

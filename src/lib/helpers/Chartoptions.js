@@ -46,6 +46,10 @@ export let options = {
                 size: "80%",
             },
         },
+        expandOnClick: false,
+        customScale: 5,
+        offsetY: 0,
+        offsetX: 0,
     },
     grid: {
         padding: {
