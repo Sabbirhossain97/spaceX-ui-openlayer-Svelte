@@ -9,7 +9,7 @@ import { Feature } from "ol";
 import { Style, Icon } from "ol/style";
 import { fromLonLat } from "ol/proj";
 import { defaults as defaultControls } from "ol/control";
-
+import { boundingExtent } from 'ol/extent';
 /**
  * Initialize the map and return the map instance.
  * @param {string} target - The ID of the DOM element to render the map in.
@@ -21,10 +21,12 @@ export function initializeMap(target, initialLandpads) {
 
     const markersLayer = new VectorLayer({
         source: markersSource,
+        zIndex: 1,
     });
 
     const tileLayer = new TileLayer({
         source: new OSM(),
+        zIndex: 0,
     });
 
     const map = new Map({
@@ -40,16 +42,43 @@ export function initializeMap(target, initialLandpads) {
         }),
     });
 
+
+    const flyTo = (landpads) => {
+
+        if (landpads.length === 1) {
+            const view = map.getView();
+            const duration = 2000;
+            const zoom = 10;
+            view.animate({
+                center: fromLonLat([landpads[0].location.longitude, landpads[0].location.latitude]),
+                zoom,
+                duration,
+            });
+        } else {
+            const coordinates = landpads.map((landpad) =>
+                fromLonLat([landpad.location.longitude, landpad.location.latitude])
+            );
+
+            const extent = boundingExtent(coordinates);
+            map.getView().fit(extent, {
+                padding: [50, 50, 50, 50],
+                duration: 2000,
+            });
+
+        }
+
+    };
+
     const updateMarkers = (landpads) => {
         markersSource.clear();
 
         const features = landpads.map((zone) => {
             const fillColor =
-                zone.status === "active"
-                    ? "#00FF00"
-                    : zone.status === "retired"
-                        ? "#FF0000"
-                        : "#0000FF";
+                zone.status === 'active'
+                    ? '#00FF00'
+                    : zone.status === 'retired'
+                        ? '#FF0000'
+                        : '#33b8ff';
 
             const svg = `
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="14" viewBox="0 0 15 14" fill="none">
@@ -70,7 +99,7 @@ export function initializeMap(target, initialLandpads) {
                 new Style({
                     image: new Icon({
                         src: svgBase64,
-                        scale: 1,
+                        scale: 1.5,
                     }),
                 })
             );
@@ -86,5 +115,7 @@ export function initializeMap(target, initialLandpads) {
     return {
         map,
         updateMarkers,
+        flyTo
+
     };
 }

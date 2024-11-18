@@ -45,7 +45,6 @@
     let selectedStatus = $state(null);
     let view = $state("list");
     let loading = $state(true);
-    let error = null;
     let customColor = $state("");
     let dropdownRef;
     let mapInstance;
@@ -80,13 +79,11 @@
                 labels: landpadLabels,
             };
 
-            const { map, updateMarkers } = initializeMap(
-                "map",
-                filteredLandpads,
-            );
-            mapInstance = { map, updateMarkers };
+            const { map, updateMarkers, flyTo, flyToAllLandpads } =
+                initializeMap("map", filteredLandpads);
+            mapInstance = { map, updateMarkers, flyTo };
         } catch (err) {
-            error = err.message;
+            err = err.message;
         } finally {
             loading = false;
         }
@@ -122,11 +119,12 @@
 
     function handleStatusChange(status) {
         statusFilter = status;
-        selectedStatus = selectedStatus === status ? null : status;
+        selectedStatus = status;
         filteredLandpads = statusFilter
             ? landpads.filter((landpad) => landpad.status === statusFilter)
             : landpads;
         mapInstance.updateMarkers(filteredLandpads);
+        mapInstance.flyTo(filteredLandpads);
         filteredSuccessRates = filteredLandpads.map((item) => {
             if (item.attempted_landings === 0) {
                 return 0;
@@ -183,13 +181,13 @@
                 {#if selectedStatus}
                     <Button
                         onclick={() => handleStatusChange(null)}
-                        class="cursor-pointer border bg-[#F8F8F8] hover:bg-gray-100"
+                        class="cursor-pointer border bg-[#F8F8F8] hover:bg-gray-100 w-full xs:w-[80px]"
                         ><ResetIcon /></Button
                     >
                 {/if}
                 <Button
                     onclick={toggleDropdown}
-                    class={`${dropdownOpen ? "text-blue-500" : "text-gray-800"} w-full bg-[#F8F8F8] hover:bg-gray-100 border border-gray-200 rounded-lg focus:ring-4 focus:ring-gray-100`}
+                    class={`${dropdownOpen ? "text-blue-500" : "text-gray-800"} w-full xs:w-[250px] sm:w-full bg-[#F8F8F8] hover:bg-gray-100 border border-gray-200 rounded-lg focus:ring-4 focus:ring-gray-100`}
                 >
                     <FilterIcon {dropdownOpen} />
                     {#if selectedStatus === null}
@@ -212,14 +210,24 @@
                 <Dropdown class="p-3 space-y-1">
                     {#each [...new Set(landpads.map((zone) => zone.status))] as status}
                         <li class="rounded p-2 capitalize text-nowrap">
-                            <Radio
-                                class="focus:outline-none"
-                                name={status}
-                                bind:group={selectedStatus}
-                                onchange={() => {
-                                    handleStatusChange(status);
-                                }}>{status}</Radio
-                            >
+                            <div>
+                                <input
+                                    id={status}
+                                    bind:group={selectedStatus}
+                                    type="radio"
+                                    value={status}
+                                    onchange={() => {
+                                        handleStatusChange(status);
+                                    }}
+                                    name={status}
+                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:outline-none"
+                                />
+                                <label
+                                    for={status}
+                                    class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                                    >{status}</label
+                                >
+                            </div>
                         </li>
                     {/each}
                 </Dropdown>
@@ -452,24 +460,24 @@
         {/if}
     </div>
     <div
-        class="flex flex-col lg:flex-row gap-[30px] xl:flex-col mt-[50px] rounded-lg w-full xl:w-1/4 relative"
+        class="flex flex-col lg:flex-row gap-[30px] xl:flex-col mt-[50px] w-full xl:w-1/4 relative"
     >
         <div
-            class="min-h-[300px] border w-full lg:w-1/2 xl:w-full border-[#E5E7EB] rounded-[12px] shadow-map relative"
+            class="min-h-[300px] z-20 border w-full lg:w-1/2 xl:w-full border-[#E5E7EB] rounded-[12px] shadow-map relative"
         >
             <div class=" px-4 py-4">
                 <p class="text-[16px] font-semibold leading-6">Map View</p>
             </div>
             {#if loading}
                 <div
-                    class="absolute left-[43%] top-1/2 flex justify-center items-center bg-white z-10"
+                    class="absolute left-[43%] top-1/2 flex justify-center items-center bg-white"
                 >
                     <Spinner color="#3f83f8" size={8} />
                 </div>
             {/if}
             <div
                 id="map"
-                class={`${loading ? "opacity-0" : ""} bg-[#d3d3d3] h-[300px] relative`}
+                class={`${loading ? "opacity-50" : ""} overflow-hidden h-[300px] relative z-5 rounded-b-[12px]`}
             ></div>
         </div>
 
@@ -495,9 +503,3 @@
         </div>
     </div>
 </div>
-
-<style>
-    #map {
-        border-radius: 12px;
-    }
-</style>

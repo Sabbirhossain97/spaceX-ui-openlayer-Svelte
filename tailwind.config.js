@@ -16,6 +16,9 @@ export default {
   darkMode: 'selector',
   theme: {
     extend: {
+      screens: {
+        'xs': '390px'
+      },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },
