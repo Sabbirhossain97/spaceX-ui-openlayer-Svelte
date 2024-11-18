@@ -1,9 +1,8 @@
 <script>
     import LinkIcon from "$lib/icons/LinkIcon.svelte";
     import { Button } from "flowbite-svelte";
-    const {
+    let {
         filteredLandpads,
-        handleModal,
         getLandpadDetails,
         calculateSuccessRate,
     } = $props();
@@ -85,7 +84,6 @@
                         <div class="flex justify-center items-center h-full">
                             <Button
                                 onclick={() => {
-                                    handleModal();
                                     getLandpadDetails(landpad);
                                 }}
                                 size="sm"

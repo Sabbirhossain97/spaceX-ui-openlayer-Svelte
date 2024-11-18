@@ -7,6 +7,7 @@
     title={`Details - ${landpadDetails.name}`}
     bind:open={modal}
     autoclose
+    outsideclose
     classHeader="text-[18px] font-semibold not-italic leading-[27px] text-gray-900"
 >
     <div class="pb-[130px]">

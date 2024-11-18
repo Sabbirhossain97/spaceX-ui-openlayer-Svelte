@@ -6,15 +6,12 @@
         TableBodyRow,
         TableHead,
         TableHeadCell,
-        TextPlaceholder,
         Progressbar,
         Button,
     } from "flowbite-svelte";
     import LinkIcon from "$lib/icons/LinkIcon.svelte";
-    const {
+    let {
         filteredLandpads,
-        loading,
-        handleModal,
         getLandpadDetails,
         calculateSuccessRate,
     } = $props();
@@ -36,18 +33,13 @@
         {#each filteredLandpads as landpad}
             <TableBodyRow>
                 <TableBodyCell>
-                    {#if loading}
-                        <TextPlaceholder />
-                    {:else}
-                        {landpad.full_name}
-                    {/if}
+                    {landpad.full_name}
                 </TableBodyCell>
                 <TableBodyCell>{landpad.location.name}</TableBodyCell>
                 <TableBodyCell>{landpad.location.region}</TableBodyCell>
                 <TableBodyCell>
                     <Button
                         onclick={() => {
-                            handleModal();
                             getLandpadDetails(landpad);
                         }}
                         class="bg-gray-100 transition duration-300 hover:bg-gray-200 "

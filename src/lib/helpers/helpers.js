@@ -4,6 +4,6 @@ export function calculateSuccessRate(landpad) {
         return 0;
     }
     return (
-        Math.round((successful_landings / attempted_landings) * 100) 
+        Math.round((successful_landings / attempted_landings) * 100)
     );
 }

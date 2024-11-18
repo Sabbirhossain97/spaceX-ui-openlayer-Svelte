@@ -18,14 +18,12 @@
     let filteredLandpads = $state([]);
     let landpadSuccessRates = $state([]);
     let filteredSuccessRates = $state([]);
-    let landpadDetails = $state({ name: "", details: "" });
+    let landpadDetails = $state({});
     let landpadLabels = [];
-    let statusFilter = null;
     let dropdownOpen = $state(false);
     let selectedStatus = $state(null);
     let view = $state("list");
     let loading = $state(true);
-    let customColor = $state("");
     let dropdownRef = $state(null);
     let mapInstance;
     let chartOptions = $state({ ...options });
@@ -82,28 +80,25 @@
         };
     });
 
+    //handle grid or list view
     function handleView(e) {
         view = e.currentTarget.name;
     }
 
-    function handleModal() {
-        defaultModal = true;
-        return defaultModal;
-    }
-
     //get landpadDetails for modal
     function getLandpadDetails(landpad) {
-        landpadDetails.name = landpad.full_name;
-        landpadDetails.details = landpad.details;
-        return landpadDetails;
+        defaultModal = true;
+        return Object.assign(landpadDetails, {
+            name: landpad.full_name,
+            details: landpad.details,
+        });
     }
 
     //to filter based on status change
     function handleStatusChange(status) {
-        statusFilter = status;
         selectedStatus = status;
-        filteredLandpads = statusFilter
-            ? landpads.filter((landpad) => landpad.status === statusFilter)
+        filteredLandpads = selectedStatus
+            ? landpads.filter((landpad) => landpad.status === selectedStatus)
             : landpads;
         mapInstance.updateMarkers(filteredLandpads);
         mapInstance.flyTo(filteredLandpads);
@@ -121,7 +116,6 @@
 
     function toggleDropdown() {
         dropdownOpen = !dropdownOpen;
-        customColor == dropdownOpen ? "#3f83f8" : "#000";
     }
 </script>
 
@@ -131,6 +125,8 @@
     class="px-[50px] flex flex-col xl:flex-row justify-center items-start xl:gap-10 pb-[230px]"
 >
     <div class="mt-[50px] flex flex-col w-full xl:w-3/4">
+        <!-- view and filter section -->
+
         <div class="flex flex-col gap-4 sm:gap-0 sm:flex-row justify-between">
             <View {handleView} {view} />
             <Filter
@@ -158,8 +154,6 @@
             >
                 <LandpadTable
                     {filteredLandpads}
-                    {loading}
-                    {handleModal}
                     {getLandpadDetails}
                     {calculateSuccessRate}
                 />
@@ -167,8 +161,6 @@
         {:else}
             <LandpadGrid
                 {filteredLandpads}
-                {loading}
-                {handleModal}
                 {getLandpadDetails}
                 {calculateSuccessRate}
             />
