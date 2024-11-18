@@ -14,10 +14,7 @@
     import { options } from "$lib/helpers/Chartoptions.js";
     import { FilterIcon, ResetIcon } from "$lib/icons/index.js";
     import { initializeMap } from "$lib/helpers/InitializeMap.js";
-    import {
-        successRateProgress,
-        calculateSuccessRate,
-    } from "$lib/helpers/helpers.js";
+    import { calculateSuccessRate } from "$lib/helpers/helpers.js";
 
     let defaultModal = $state(false);
     let landpads = $state([]);
@@ -35,6 +32,7 @@
     let dropdownRef;
     let mapInstance;
     let chartOptions = $state({ ...options });
+    let error = $state(null);
 
     onMount(async () => {
         try {
@@ -44,19 +42,13 @@
             if (!response.ok) throw new Error("Failed to fetch data");
             landpads = await response.json();
             filteredLandpads = landpads;
-            landpadSuccessRates = landpads.map((item) => {
-                if (item.attempted_landings === 0) {
-                    return 0;
-                } else if (item.successful_landings === 0) {
-                    return 0;
-                } else {
-                    return Math.round(
-                        (item.successful_landings / item.attempted_landings) *
-                            100,
-                    );
-                }
-            });
 
+            //show success rate for chart
+            landpadSuccessRates = landpads.map((landpad) =>
+                calculateSuccessRate(landpad),
+            );
+
+            //show landpad labels on chart
             landpadLabels = landpads.map((item) => item.full_name);
 
             chartOptions = {
@@ -65,13 +57,14 @@
                 labels: landpadLabels,
             };
 
+            //to initialize map
             const { map, updateMarkers, flyTo } = initializeMap(
                 "map",
                 filteredLandpads,
             );
             mapInstance = { map, updateMarkers, flyTo };
         } catch (err) {
-            err = err.message;
+            error = err.message;
         } finally {
             loading = false;
         }
@@ -102,12 +95,14 @@
         return defaultModal;
     }
 
+    //get landpadDetails for modal
     function getLandpadDetails(landpad) {
         landpadDetails.name = landpad.full_name;
         landpadDetails.details = landpad.details;
         return landpadDetails;
     }
 
+    //to filter based on status change
     function handleStatusChange(status) {
         statusFilter = status;
         selectedStatus = status;
@@ -116,17 +111,9 @@
             : landpads;
         mapInstance.updateMarkers(filteredLandpads);
         mapInstance.flyTo(filteredLandpads);
-        filteredSuccessRates = filteredLandpads.map((item) => {
-            if (item.attempted_landings === 0) {
-                return 0;
-            } else if (item.successful_landings === 0) {
-                return 0;
-            } else {
-                return Math.round(
-                    (item.successful_landings / item.attempted_landings) * 100,
-                );
-            }
-        });
+        filteredSuccessRates = filteredLandpads.map((landpad) =>
+            calculateSuccessRate(landpad),
+        );
         chartOptions = {
             ...chartOptions,
             series: filteredSuccessRates,
@@ -232,7 +219,6 @@
                     {loading}
                     {handleModal}
                     {getLandpadDetails}
-                    {successRateProgress}
                     {calculateSuccessRate}
                 />
             </div>
@@ -242,7 +228,6 @@
                 {loading}
                 {handleModal}
                 {getLandpadDetails}
-                {successRateProgress}
                 {calculateSuccessRate}
             />
         {/if}

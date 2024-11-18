@@ -16,7 +16,6 @@
         loading,
         handleModal,
         getLandpadDetails,
-        successRateProgress,
         calculateSuccessRate,
     } = $props();
 </script>
@@ -61,17 +60,21 @@
                 </TableBodyCell>
                 <TableBodyCell>
                     <div>
-                        {#if successRateProgress(landpad) !== "N/A"}
+                        {#if landpad.attempted_landings !== 0}
                             <Progressbar
-                                progress={successRateProgress(landpad)}
+                                progress={calculateSuccessRate(landpad)}
                                 size="h-1.5"
                                 progressClass="bg-green-400"
                             />
                         {/if}
                     </div>
-                    <span>
-                        {calculateSuccessRate(landpad)}
-                    </span>
+                    {#if landpad.attempted_landings === 0}
+                        <span> N/A </span>
+                    {:else}
+                        <span>
+                            {calculateSuccessRate(landpad) + "%"}
+                        </span>
+                    {/if}
                 </TableBodyCell>
                 <TableBodyCell>
                     {#if landpad.wikipedia}
