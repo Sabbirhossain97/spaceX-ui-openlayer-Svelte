@@ -10,16 +10,13 @@
         Button,
     } from "flowbite-svelte";
     import LinkIcon from "$lib/icons/LinkIcon.svelte";
-    let {
-        filteredLandpads,
-        getLandpadDetails,
-        calculateSuccessRate,
-    } = $props();
+    let { filteredLandpads, getLandpadDetails, calculateSuccessRate } =
+        $props();
 </script>
 
 <Table>
     <TableHead
-        class="bg-gray-50 border-b text-[12px] font-semibold leading-[18px] uppercase text-gray-500 inter"
+        class="bg-gray-50 h-[44px] border-b text-[12px] font-semibold leading-[18px] uppercase text-gray-500 custom-table-head"
     >
         <TableHeadCell>Full name</TableHeadCell>
         <TableHeadCell>Location Name</TableHeadCell>
