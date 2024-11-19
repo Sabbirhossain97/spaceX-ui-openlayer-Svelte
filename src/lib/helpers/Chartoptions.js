@@ -1,12 +1,12 @@
 let dynamicLabel;
-
+let hasData;
 export function getChartOptions(data, label) {
-
-    dynamicLabel = data.length === 1 ? "Landing Pad" : "Landing Pads"
+    hasData = data.some((item) => item > 0);
+    dynamicLabel = hasData ? "Landing Pads" : "No Data"
     return {
-        series: data.length > 1 ? data : [100],
+        series: hasData ? data : [100],
         labels: label,
-        colors: data.length === 1 ? ["#d3d3d3"] : [],
+        colors: hasData ? [] : ["#e8e6e6"],
         chart: {
             height: 222,
             width: "100%",
@@ -24,7 +24,7 @@ export function getChartOptions(data, label) {
                         name: {
                             show: true,
                             fontFamily: "Inter, sans-serif",
-                            offsetY: 20,
+                            offsetY: hasData ? 20 : 10,
                         },
                         total: {
                             showAlways: true,
@@ -32,9 +32,11 @@ export function getChartOptions(data, label) {
                             label: dynamicLabel,
                             fontFamily: "Inter, sans-serif",
                             formatter: function (w) {
-                                console.log(w.globals.seriesTotals)
-                                return w.globals.seriesTotals.length;
-
+                                if (hasData) {
+                                    return w.globals.seriesTotals.length;
+                                } else {
+                                    return
+                                }
                             },
                         },
                         value: {
