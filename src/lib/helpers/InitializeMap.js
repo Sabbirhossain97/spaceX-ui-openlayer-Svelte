@@ -29,22 +29,6 @@ export function initializeMap(target, initialLandpads) {
         zIndex: 0,
     });
 
-    tile.on('prerender', (evt) => {
-        const context = evt.context;
-        if (context && context instanceof CanvasRenderingContext2D) {
-            context.save();
-            context.filter = 'grayscale(100%)';
-            context.globalCompositeOperation = 'source-over';
-        }
-    });
-
-    tile.on('postrender', (evt) => {
-        const context = evt.context;
-        if (context && context instanceof CanvasRenderingContext2D) {
-            context.restore();
-        }
-    });
-
     const map = new Map({
         target,
         layers: [tile, markersLayer],

@@ -1,85 +1,90 @@
-export let options = {
-    series: [],
-    labels: [],
-    chart: {
-        height: 222,
-        width: "100%",
-        type: "donut",
-    },
-    stroke: {
-        colors: ["transparent"],
-        lineCap: "",
-    },
-    plotOptions: {
-        pie: {
-            donut: {
-                labels: {
-                    show: true,
-                    name: {
+let dynamicLabel;
+
+export function getChartOptions(data, label) {
+
+    dynamicLabel = data.length === 1 ? "Landing Pad" : "Landing Pads"
+    return {
+        series: data.length > 1 ? data : [100],
+        labels: label,
+        colors: data.length === 1 ? ["#d3d3d3"] : [],
+        chart: {
+            height: 222,
+            width: "100%",
+            type: "donut",
+        },
+        stroke: {
+            colors: ["transparent"],
+            lineCap: "",
+        },
+        plotOptions: {
+            pie: {
+                donut: {
+                    labels: {
                         show: true,
-                        fontFamily: "Inter, sans-serif",
-                        offsetY: 20,
-                    },
-                    total: {
-                        showAlways: true,
-                        show: true,
-                        label: "Landing Pads",
-                        fontFamily: "Inter, sans-serif",
-                        formatter: function (w) {
-                            const landpadTotal = w.globals.seriesTotals;
-                            const hasData = landpadTotal.some(value => value > 0);
-                            if (!hasData) {
-                                return "No Data of";
-                            }
-                            return `${landpadTotal.length}`;
+                        name: {
+                            show: true,
+                            fontFamily: "Inter, sans-serif",
+                            offsetY: 20,
+                        },
+                        total: {
+                            showAlways: true,
+                            show: true,
+                            label: dynamicLabel,
+                            fontFamily: "Inter, sans-serif",
+                            formatter: function (w) {
+                                console.log(w.globals.seriesTotals)
+                                return w.globals.seriesTotals.length;
+
+                            },
+                        },
+                        value: {
+                            show: true,
+                            fontFamily: "Inter, sans-serif",
+                            offsetY: -20,
+                            formatter: function (value) {
+                                return value;
+                            },
                         },
                     },
-                    value: {
-                        show: true,
-                        fontFamily: "Inter, sans-serif",
-                        offsetY: -20,
-                        formatter: function (value) {
-                            return value;
-                        },
-                    },
+                    size: "80%",
                 },
-                size: "80%",
             },
         },
-        expandOnClick: false,
-        customScale: 5,
-        offsetY: 0,
-        offsetX: 0,
-    },
-    grid: {
-        padding: {
-            top: -2,
-        },
-    },
-    dataLabels: {
-        enabled: false,
-    },
-    legend: {
-        show: false,
-    },
-    yaxis: {
-        labels: {
-            formatter: function (value) {
-                return `${value}%`;
+        grid: {
+            padding: {
+                top: -2,
             },
         },
-    },
-    xaxis: {
-        labels: {
-            formatter: function (value) {
-                return `${value}%`;
-            },
+        dataLabels: {
+            enabled: false,
         },
-        axisTicks: {
+        legend: {
             show: false,
         },
-        axisBorder: {
-            show: false,
+        yaxis: {
+            labels: {
+                formatter: function (value) {
+                    if (value === 100) {
+                        return "0%"
+                    } else {
+                        return `${value}%`;
+                    }
+
+                },
+            },
         },
-    },
-};
+        xaxis: {
+            labels: {
+                formatter: function (value) {
+                    return `${value}%`;
+                },
+            },
+            axisTicks: {
+                show: false,
+            },
+            axisBorder: {
+                show: false,
+            },
+        },
+    };
+}

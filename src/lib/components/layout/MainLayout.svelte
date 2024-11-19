@@ -7,11 +7,11 @@
     import { Spinner } from "flowbite-svelte";
     import { onMount } from "svelte";
     import "ol/ol.css";
-    import { options } from "$lib/helpers/Chartoptions.js";
     import { initializeMap } from "$lib/helpers/InitializeMap.js";
     import { calculateSuccessRate } from "$lib/helpers/helpers.js";
     import DetailsModal from "../DetailsModal.svelte";
     import Filter from "./Filter.svelte";
+    import { getChartOptions } from "$lib/helpers/Chartoptions.js";
 
     let defaultModal = $state(false);
     let landpads = $state([]);
@@ -26,7 +26,7 @@
     let loading = $state(true);
     let dropdownRef = $state(null);
     let mapInstance;
-    let chartOptions = $state({ ...options });
+    let chartOptions = $state({});
     let error = $state(null);
 
     onMount(async () => {
@@ -46,13 +46,10 @@
             //show landpad labels on chart
             landpadLabels = landpads.map((item) => item.full_name);
 
-            chartOptions = {
-                ...chartOptions,
-                series: landpadSuccessRates,
-                labels: landpadLabels,
-            };
+            //initialize chart options
+            chartOptions = getChartOptions(landpadSuccessRates, landpadLabels);
 
-            //to initialize map
+            //initialize map
             const { map, updateMarkers, flyTo } = initializeMap(
                 "map",
                 filteredLandpads,
@@ -65,6 +62,7 @@
         }
     });
 
+    //handle outside click of filter dropdown
     $effect(() => {
         const handleDropDownOutsideClick = (event) => {
             if (dropdownRef && !dropdownRef.contains(event.target)) {
@@ -97,6 +95,8 @@
     //to filter based on status change
     function handleStatusChange(status) {
         selectedStatus = status;
+
+        //filter landpads based on status
         filteredLandpads = selectedStatus
             ? landpads.filter((landpad) => landpad.status === selectedStatus)
             : landpads;
@@ -107,11 +107,12 @@
         filteredSuccessRates = filteredLandpads.map((landpad) =>
             calculateSuccessRate(landpad),
         );
-        chartOptions = {
-            ...chartOptions,
-            series: filteredSuccessRates,
-            labels: landpadLabels,
-        };
+
+        //filter labels for chart
+        landpadLabels = filteredLandpads.map((landpad) => landpad.full_name);
+
+        //update chart based on filter
+        chartOptions = getChartOptions(filteredSuccessRates, landpadLabels);
     }
 
     function toggleDropdown() {
