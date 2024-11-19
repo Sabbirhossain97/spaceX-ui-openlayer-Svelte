@@ -16,7 +16,7 @@
 
 <Table>
     <TableHead
-        class="bg-gray-50 h-[44px] border-b text-[12px] font-semibold leading-[18px] uppercase text-gray-500 custom-table-head"
+        class="bg-gray-50 h-[54px] border-b text-[12px] font-semibold leading-[18px] uppercase text-gray-500 custom-table-head"
     >
         <TableHeadCell>Full name</TableHeadCell>
         <TableHeadCell>Location Name</TableHeadCell>
