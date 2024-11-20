@@ -22,7 +22,7 @@
     {#if selectedStatus}
         <Button
             onclick={() => handleStatusChange(null)}
-            class="cursor-pointer focus:ring-4 focus:ring-gray-100 border bg-[#F8F8F8] hover:bg-gray-100 w-full xs:w-[80px]"
+            class="cursor-pointer focus:ring-4 focus:ring-gray-100 border bg-[#F8F8F8] hover:bg-gray-100 w-[65px]"
             ><ResetIcon /></Button
         >
     {/if}

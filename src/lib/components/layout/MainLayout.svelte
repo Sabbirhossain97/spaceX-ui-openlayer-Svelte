@@ -123,7 +123,7 @@
 <DetailsModal bind:modal={defaultModal} {landpadDetails} />
 
 <div
-    class="px-[50px] flex flex-col xl:flex-row justify-center items-start xl:gap-10 pb-[230px]"
+    class="px-[25px] sm:px-[50px] flex flex-col xl:flex-row justify-center items-start xl:gap-10 pb-[230px]"
 >
     <div class="mt-[50px] flex flex-col w-full xl:w-3/4">
         <!-- view and filter section -->
@@ -170,7 +170,7 @@
 
     <!-- map and chart section -->
     <div
-        class="flex flex-col md:flex-row gap-[30px] xl:flex-col mt-[50px] w-full xl:w-1/4 relative"
+        class="flex flex-col md:flex-row gap-[30px] xl:flex-col mt-[30px] xl:mt-[50px] w-full xl:w-1/4 relative"
     >
         <MapView {loading} />
         <ChartView {loading} {chartOptions} />
